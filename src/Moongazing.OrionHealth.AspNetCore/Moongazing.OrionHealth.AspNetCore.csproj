@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>OrionHealth.AspNetCore</PackageId>
+    <Description>ASP.NET Core endpoints for OrionHealth: MapOrionHealth() maps /healthz (liveness — no dependency I/O) and /readyz (readiness — tagged dependency probes) with the structured health JSON and a correlation traceId. Kubernetes stops routing to a pod whose dependency died, without crash-looping on a transient blip.</Description>
+    <PackageTags>orion;health;healthcheck;readiness;liveness;kubernetes;aspnetcore;dotnet</PackageTags>
+    <RootNamespace>Moongazing.OrionHealth.AspNetCore</RootNamespace>
+    <Product>OrionHealth.AspNetCore</Product>
+    <!-- Not marked IsAotCompatible: it references the ASP.NET Core shared framework; the framework-free OrionHealth core carries the AOT smoke. -->
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\Moongazing.OrionHealth\Moongazing.OrionHealth.csproj" />
+  </ItemGroup>
+</Project>

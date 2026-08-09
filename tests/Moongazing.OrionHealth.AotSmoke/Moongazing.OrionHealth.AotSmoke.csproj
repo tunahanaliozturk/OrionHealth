@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!--
+      The NativeAOT publish smoke test for the framework-free core. `dotnet publish` must succeed with
+      zero trim/AOT warnings, exercising the tag predicates, the source-gen health-report JSON writer,
+      and telemetry, in a rooted, trimmed, native binary that exits 0. The ASP.NET Core endpoints
+      (OrionHealth.AspNetCore) are excluded — they reference the ASP.NET shared framework.
+    -->
+    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks />
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Moongazing.OrionHealth\Moongazing.OrionHealth.csproj" />
+  </ItemGroup>
+</Project>

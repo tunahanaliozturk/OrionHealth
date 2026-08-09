@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>OrionHealth</PackageId>
+    <Description>The Orion family's readiness story: an opinionated liveness/readiness split over Microsoft.Extensions.Diagnostics.HealthChecks. This framework-free core defines the readiness/liveness tags, the tagged registration helpers, a structured health-report JSON writer, and OpenTelemetry. AOT-clean. Add OrionHealth.AspNetCore for the /healthz + /readyz endpoints.</Description>
+    <PackageTags>orion;health;healthcheck;readiness;liveness;kubernetes;probe;dotnet</PackageTags>
+    <RootNamespace>Moongazing.OrionHealth</RootNamespace>
+    <Product>OrionHealth</Product>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Orion.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Moongazing.OrionHealth.Tests" />
+  </ItemGroup>
+</Project>
