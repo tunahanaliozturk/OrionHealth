@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="706" viewBox="0 0 1200 706">
+  <!--
+    Orion family diagram template. Copy it, keep <defs> and <style>, replace the body.
+    Classes: .step (our code) .ext (backend / external system) .ok (success end) .fail (failure path)
+             .decision (diamond) .note (side remark) .lane (sequence lifeline)
+    Arrows: class="flow" (main path), "flow alt" (alternate / failure path, dashed), "flow back" (response).
+  -->
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-fail" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <style>
+    text { font-family: "Segoe UI", Inter, "Helvetica Neue", Arial, sans-serif; fill: #1e1b4b; }
+    .title { font-size: 24px; font-weight: 700; }
+    .subtitle { font-size: 14px; fill: #475569; }
+    .label { font-size: 15px; font-weight: 600; }
+    .small { font-size: 12.5px; fill: #475569; }
+    .code { font-family: "Cascadia Code", Consolas, "SF Mono", monospace; font-size: 13px; fill: #3730a3; }
+    .edge { font-size: 12.5px; fill: #334155; }
+    .step { fill: #eef2ff; stroke: #4f46e5; stroke-width: 2; }
+    .ext { fill: #f0f9ff; stroke: #0284c7; stroke-width: 2; }
+    .ok { fill: #ecfdf5; stroke: #059669; stroke-width: 2; }
+    .fail { fill: #fef2f2; stroke: #dc2626; stroke-width: 2; }
+    .decision { fill: #fffbeb; stroke: #d97706; stroke-width: 2; }
+    .note { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.5; stroke-dasharray: 4 3; }
+    .lane { stroke: #cbd5e1; stroke-width: 1.5; stroke-dasharray: 6 5; }
+    .flow { fill: none; stroke: #64748b; stroke-width: 2; marker-end: url(#arrow); }
+    .flow.alt { stroke: #dc2626; stroke-dasharray: 6 4; marker-end: url(#arrow-fail); }
+    .flow.back { stroke-dasharray: 6 4; }
+    .badge { fill: #4f46e5; }
+    .badge-text { font-size: 12px; font-weight: 700; fill: #ffffff; }
+  </style>
+
+
+  <rect width="1200" height="706" fill="#ffffff"/>
+
+  <text class="title" x="40" y="52">OrionHealth - what /readyz and /healthz do on each probe</text>
+  <text class="subtitle" x="40" y="78">Readiness runs the dependency probes and drains the pod when one fails; liveness runs only process checks, so a dependency outage never restarts the pod.</text>
+
+  <!-- ===== readiness lane ===== -->
+  <text class="label" x="40" y="122">Readiness: checks tagged "ready"</text>
+
+  <rect class="ext" x="40" y="175" width="200" height="80" rx="14"/>
+  <text class="label" x="140" y="208" text-anchor="middle">Readiness probe</text>
+  <text class="code" x="140" y="232" text-anchor="middle">GET /readyz</text>
+
+  <path class="flow" d="M240,215 L288,215"/>
+
+  <rect class="step" x="290" y="175" width="240" height="80" rx="14"/>
+  <text class="label" x="410" y="203" text-anchor="middle">Run ready-tagged checks</text>
+  <text class="code" x="410" y="225" text-anchor="middle">Predicate = IsReadiness</text>
+  <text class="small" x="410" y="244" text-anchor="middle">dependency I/O happens here</text>
+
+  <path class="flow" d="M530,215 L558,215"/>
+
+  <polygon class="decision" points="660,145 760,215 660,285 560,215"/>
+  <text class="code" x="660" y="212" text-anchor="middle">report.Status</text>
+  <text class="small" x="660" y="232" text-anchor="middle">worst check wins</text>
+
+  <path class="flow" d="M760,215 L790,215 L790,165 L818,165"/>
+  <rect class="ok" x="820" y="129" width="340" height="72" rx="14"/>
+  <text class="label" x="990" y="158" text-anchor="middle">200 OK</text>
+  <text class="small" x="990" y="181" text-anchor="middle">Healthy or Degraded: the pod keeps serving</text>
+
+  <path class="flow alt" d="M660,285 L660,305 L818,305"/>
+  <text class="edge" x="740" y="297" text-anchor="middle">Unhealthy</text>
+  <rect class="fail" x="820" y="261" width="340" height="88" rx="14"/>
+  <text class="label" x="990" y="288" text-anchor="middle">503 Service Unavailable</text>
+  <text class="small" x="990" y="310" text-anchor="middle">a check returned Unhealthy or threw</text>
+  <text class="small" x="990" y="330" text-anchor="middle">pod marked NotReady and drained, not restarted</text>
+
+  <line class="lane" x1="40" y1="372" x2="1160" y2="372"/>
+
+  <!-- ===== liveness lane ===== -->
+  <text class="label" x="40" y="408">Liveness: checks tagged "live"</text>
+
+  <rect class="ext" x="40" y="460" width="200" height="80" rx="14"/>
+  <text class="label" x="140" y="493" text-anchor="middle">Liveness probe</text>
+  <text class="code" x="140" y="517" text-anchor="middle">GET /healthz</text>
+
+  <path class="flow" d="M240,500 L288,500"/>
+
+  <rect class="step" x="290" y="460" width="240" height="80" rx="14"/>
+  <text class="label" x="410" y="488" text-anchor="middle">Run live-tagged checks</text>
+  <text class="code" x="410" y="510" text-anchor="middle">Predicate = IsLiveness</text>
+  <text class="small" x="410" y="529" text-anchor="middle">ready-tagged checks never run</text>
+
+  <path class="flow" d="M530,500 L558,500"/>
+
+  <polygon class="decision" points="660,430 760,500 660,570 560,500"/>
+  <text class="code" x="660" y="497" text-anchor="middle">report.Status</text>
+  <text class="small" x="660" y="517" text-anchor="middle">worst check wins</text>
+
+  <path class="flow" d="M760,500 L790,500 L790,450 L818,450"/>
+  <rect class="ok" x="820" y="414" width="340" height="72" rx="14"/>
+  <text class="label" x="990" y="443" text-anchor="middle">200 OK</text>
+  <text class="small" x="990" y="466" text-anchor="middle">also when no check is tagged "live"</text>
+
+  <path class="flow alt" d="M660,570 L660,590 L818,590"/>
+  <text class="edge" x="740" y="582" text-anchor="middle">Unhealthy</text>
+  <rect class="fail" x="820" y="546" width="340" height="88" rx="14"/>
+  <text class="label" x="990" y="573" text-anchor="middle">503 Service Unavailable</text>
+  <text class="small" x="990" y="595" text-anchor="middle">a live check failed: the process is wedged</text>
+  <text class="small" x="990" y="615" text-anchor="middle">kubelet restarts the container</text>
+
+  <!-- note -->
+  <rect class="note" x="40" y="580" width="500" height="96" rx="10"/>
+  <text class="small" x="56" y="606">Both endpoints answer through the same writer:</text>
+  <text class="small" x="56" y="626">HealthDiagnostics.RecordReport records orion.health.check.duration,</text>
+  <text class="small" x="56" y="646">then HealthReportWriter.Serialize writes the JSON with a traceId</text>
+  <text class="small" x="56" y="666">(Activity.Current, else HttpContext.TraceIdentifier).</text>
+</svg>

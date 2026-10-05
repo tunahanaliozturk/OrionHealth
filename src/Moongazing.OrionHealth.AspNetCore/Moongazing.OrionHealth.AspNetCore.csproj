@@ -5,10 +5,14 @@
     <PackageTags>orion;health;healthcheck;readiness;liveness;kubernetes;aspnetcore;dotnet</PackageTags>
     <RootNamespace>Moongazing.OrionHealth.AspNetCore</RootNamespace>
     <Product>OrionHealth.AspNetCore</Product>
+    <PackageReadmeFile>docs/README.md</PackageReadmeFile>
     <!-- Not marked IsAotCompatible: it references the ASP.NET Core shared framework; the framework-free OrionHealth core carries the AOT smoke. -->
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="..\Moongazing.OrionHealth\Moongazing.OrionHealth.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="docs/README.md" Pack="true" PackagePath="docs/" />
   </ItemGroup>
 </Project>
