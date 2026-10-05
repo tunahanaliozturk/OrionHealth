@@ -1,30 +1,42 @@
 <p align="center">
-  <img src="docs/logo.png" alt="OrionHealth" width="150" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo.png">
+    <img src="docs/icon.png" alt="OrionHealth logo" width="150">
+  </picture>
 </p>
 
 # OrionHealth
 
 [![CI/CD](https://github.com/tunahanaliozturk/OrionHealth/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/tunahanaliozturk/OrionHealth/actions/workflows/ci-cd.yml)
 [![NuGet](https://img.shields.io/nuget/v/OrionHealth.svg)](https://www.nuget.org/packages/OrionHealth/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+![.NET](https://img.shields.io/badge/.NET-8.0%20%7C%209.0%20%7C%2010.0-purple.svg)
 
 **The suite's readiness story in one place.** An opinionated liveness/readiness split over `Microsoft.Extensions.Diagnostics.HealthChecks`: `/healthz` answers "is this process wedged — restart it?" (no dependency I/O) and `/readyz` answers "can this pod serve traffic right now?" (dependency probes) — so Kubernetes drains a pod whose database or Redis just died instead of crash-looping it on a transient blip.
 
 Kubernetes needs two truthful signals, and conflating them is a production outage in either direction: a readiness probe wired to a liveness check *restarts* a pod on every downstream hiccup; a liveness probe that pings the database keeps a healthy-but-isolated pod alive while it can't work. `AspNetCore.Diagnostics.HealthChecks` is good plumbing but a blank framework — it doesn't ship the split, doesn't know your libraries, and doesn't tie health into your telemetry. OrionHealth ships the split as the default and emits health as the same OTel signal the rest of the suite uses.
 
+![OrionHealth overview: the app calls AddOrionHealth and MapOrionHealth; OrionHealth.AspNetCore maps /healthz and /readyz over ASP.NET Core health checks, and the core emits orion.health.check.duration on the Moongazing.OrionHealth meter](docs/diagrams/overview.png)
+
 ## Packages
 
-- **`OrionHealth`** — the framework-free core: the readiness/liveness tags and predicates, tagged registration helpers, a structured health-report JSON writer, and OpenTelemetry. AOT-clean.
-- **`OrionHealth.AspNetCore`** — `MapOrionHealth()`, which maps `/healthz` + `/readyz`.
+| Package | What it is |
+|---------|------------|
+| [`OrionHealth`](https://www.nuget.org/packages/OrionHealth/) | The framework-free core: `OrionHealthTags` (`live` / `ready`) and their predicates, `AddOrionHealth` with `AddLivenessCheck` / `AddReadinessCheck`, `HealthReportWriter` (structured JSON), `OrionHealthOptions` and `HealthDiagnostics` (OpenTelemetry). AOT-clean. |
+| [`OrionHealth.AspNetCore`](https://www.nuget.org/packages/OrionHealth.AspNetCore/) | `MapOrionHealth()`, which maps `/healthz` + `/readyz`. References the ASP.NET Core shared framework and the core package. |
 
 ## Install
 
 ```bash
-dotnet add package OrionHealth.AspNetCore
+dotnet add package OrionHealth.AspNetCore   # brings in OrionHealth
 ```
+
+Use `dotnet add package OrionHealth` alone when you only need the tags, the registration helpers and the JSON writer without ASP.NET Core.
 
 ## Usage
 
 ```csharp
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Moongazing.OrionHealth.DependencyInjection;
 using Moongazing.OrionHealth.AspNetCore;
 
@@ -37,23 +49,31 @@ var app = builder.Build();
 app.MapOrionHealth();   // maps /healthz (liveness) + /readyz (readiness)
 ```
 
-- `/healthz` → **200** as long as the process is responsive (runs only liveness-tagged checks; no dependency I/O).
-- `/readyz` → **200** only if all readiness-tagged probes pass; otherwise **503** with per-dependency detail:
+`AddReadinessCheck` passes `CancellationToken.None` to the delegate in 0.1.0; the request's token is not forwarded yet.
+
+![What /readyz and /healthz do on each probe: readiness runs the ready-tagged checks and answers 503 when one is Unhealthy, so the pod is drained; liveness runs only the live-tagged checks and answers 503 only when one of those fails, so the container is restarted](docs/diagrams/probe-flow.png)
+
+- `/healthz` → **200** unless a liveness-tagged check reports `Unhealthy` (it runs only `live`-tagged checks, so no dependency I/O; with no liveness checks it always answers 200).
+- `/readyz` → **200** when every readiness-tagged probe is `Healthy` or `Degraded`; **503** when any is `Unhealthy` or throws, with per-dependency detail:
 
 ```jsonc
 {
   "status": "Unhealthy",
   "results": {
-    "cache": { "status": "Healthy",   "durationMs": 3 },
-    "db":    { "status": "Unhealthy", "durationMs": 2001, "description": "connection refused" }
+    "cache": { "status": "Healthy",   "durationMs": 3.12 },
+    "db":    { "status": "Unhealthy", "durationMs": 2001.4, "description": "connection refused" }
   },
   "traceId": "a1b2..."
 }
 ```
 
+Each entry carries `status` and `durationMs`, plus `description` and `error` (the exception message) when they are set. Both endpoints write this JSON.
+
+`AddOrionHealth` also takes an optional `Action<OrionHealthOptions>`: `ProbeTimeout` (default 2 s, must be positive) and `CacheDuration` (default 5 s, must not be negative). In 0.1.0 nothing reads them yet: they are validated only when your code resolves `IOptions<OrionHealthOptions>`, and enforced from a later wave (see the roadmap).
+
 ## Observability
 
-A `Moongazing.OrionHealth` meter records `orion.health.check.duration` (a per-check histogram in milliseconds, tagged with the check name and status), so a dashboard shows the same up/down signal Kubernetes acts on. The readiness response carries a `traceId` linking it to the failing dependency's trace.
+A `Moongazing.OrionHealth` meter records `orion.health.check.duration` (a per-check histogram in milliseconds, tagged `orion.health.check` with the check name and `orion.health.status` with its status) every time `/healthz` or `/readyz` answers, so a dashboard shows the same up/down signal Kubernetes acts on. Both responses carry a `traceId` (the current `Activity` trace id, else `HttpContext.TraceIdentifier`) linking them to the request's trace.
 
 ## Roadmap
 
@@ -68,6 +88,7 @@ Follows [Semantic Versioning](https://semver.org/). Multi-targets `net8.0`, `net
 ## Documentation
 
 - [CHANGELOG.md](CHANGELOG.md) — release notes.
+- [SECURITY.md](SECURITY.md) — how to report a vulnerability privately.
 
 ## Contributing
 
