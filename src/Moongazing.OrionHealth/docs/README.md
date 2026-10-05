@@ -8,6 +8,11 @@ The framework-free core of OrionHealth: liveness and readiness tags, tagged regi
 
     dotnet add package OrionHealth
 
+OrionHealth brings in only the DI and logging abstractions (`Microsoft.Extensions.DependencyInjection.Abstractions`, `Microsoft.Extensions.Logging.Abstractions`). The console quick start below builds its own container and calls `AddLogging()`, so it also needs these two packages (an ASP.NET Core or Generic Host app already has them):
+
+    dotnet add package Microsoft.Extensions.DependencyInjection
+    dotnet add package Microsoft.Extensions.Logging
+
 ## Quick start
 
 ```csharp
